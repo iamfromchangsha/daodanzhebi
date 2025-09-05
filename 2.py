@@ -6,7 +6,7 @@ def yuanzhufenge():
     center = np.array([0,200,0])
     r = 7
     h = 10
-    step = 1
+    step = 5
     points = []
     z_c = np.arange(center[2],center[2]+h+step,step)
     angle_step = step/r
@@ -544,22 +544,48 @@ def main():
     geti = Raidian(100)
     bijiao = []
     bijiao.clear()
+    print('初始个体已经生成')
     for i in geti:
+
+
         time = Mon3tr(i[0],i[1],i[2],i[3])
         bijiao.append(time)
+    print('初始个体的适应度函数已经计算')
     sorted_list = sorted(zip(bijiao, geti), reverse=True)
     result_list = [item for _, item in sorted_list]
     result_list = result_list[:20]
-    quansuiji = Viviana(result_list)
-    yiweisuiji = Suzuran(result_list)
-    erweisuiji = Myrtle(result_list)
-    sanweisuiji = Skadi(result_list)
-    siweisuiji = Amiya(result_list)
-    housuosi = Typhon(result_list)
-    qiansuosi = Virtuosa(result_list)
-    totaljiaohuan = quansuiji + yiweisuiji + erweisuiji + sanweisuiji + siweisuiji + housuosi + qiansuosi
+    diedaicishu = 0
+    while diedaicishu <= 100:#迭代次数
+        diedaicishu += 1
+        print(f"第 {diedaicishu} 轮迭代开始")
+        quansuiji = Viviana(result_list)
+        yiweisuiji = Suzuran(result_list)
+        erweisuiji = Myrtle(result_list)
+        sanweisuiji = Skadi(result_list)
+        siweisuiji = Amiya(result_list)
+        housuosi = Typhon(result_list)
+        qiansuosi = Virtuosa(result_list)
+        totaljiaohuan = quansuiji + yiweisuiji + erweisuiji + sanweisuiji + siweisuiji + housuosi + qiansuosi
+        youbibi = []
+        youbibi.clear()
+        for i in totaljiaohuan:
+            if random(0,100) < 2 and random(0,100) > 0:
+                i[0] = random.uniform(0,140)
+            if random(0,100) >=2 and random(0,100) < 4:
+                i[1] = random.uniform(0,140)
+            if random(0,100) >= 4 and random(0,100) < 6:
+                i[2] = random.uniform(0,140)
+            if random(0,100) >= 6 and random(0,100) < 8:
+                i[3] = random.uniform(0,140)
+            time = Mon3tr(i[0],i[1],i[2],i[3])
+            youbibi.append(time)
+        sorted_list = sorted(zip(youbibi, totaljiaohuan), reverse=True)
+        result_list = [item for _, item in sorted_list]
+        result_list = result_list[:20]
+    print(result_list)
 
 
+main()
 
 
 
