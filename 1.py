@@ -44,6 +44,19 @@ def distance(point,point_line,fangxiang):
     distance = np.linalg.norm(cr) / np.linalg.norm(d)
     return distance
 
+def xiangliang(yanx,yany,yanz,mubiaox,mubiaoy,mubiaoz,daodan_x,daodan_y,daodan_z):
+    
+    a = np.array([yanx-mubiaox,yany-mubiaoy,yanz-mubiaoz])
+    b = np.array([daodan_x-mubiaox,daodan_y-mubiaoy,daodan_z-mubiaoz])
+    dd = np.linalg.norm(b)
+    cross_product = np.dot(a, b)
+    cross_norm = np.linalg.norm(cross_product) 
+    touying = cross_norm/dd
+    if touying <= dd+10:
+        return True
+    else:
+        return False
+
 FY_x =[17800]
 FY_y =[0]
 FY_z = [1800] 
@@ -74,7 +87,7 @@ for qiut in np.arange(0,20,0.01):
     for sb in points:
         direction = [daodan_x-sb[0],daodan_y-sb[1],daodan_z-sb[2]]
         dist = distance(point,line_point,direction)
-        if dist < 10 and x**2+ (y-200)**2+z**2 <= (daodan_x-sb[0])**2+ (daodan_y-sb[1])**2+(daodan_z-sb[2])**2+20:
+        if dist < 10 and xiangliang(x,y,z,sb[0],sb[1],sb[2],daodan_x,daodan_y,daodan_z):
             k.append(1)
     if len(k)== len(points):
         time.append(t)
@@ -89,5 +102,5 @@ for i in range(len(time)):
             if aaa == len(time):
                 print("有效遮蔽时间断{}~{}秒".format(time[0],time[-1]))
 
-print("有效遮蔽时间：",round(len(time)*0.01,2),"秒")
+print("有效遮蔽时间：",round((len(time)-1)*0.01,2),"秒")
             
