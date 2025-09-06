@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+random.seed(42)
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 def yuanzhufenge():
@@ -47,9 +48,19 @@ def distance(point, point_line, fangxiang):
     cr = np.cross(lp, d)
     return np.linalg.norm(cr) / np.linalg.norm(d)
 
-def cos(a, b, c):
-    cos_val = (a**2 + b**2 - c**2) / (2 * a * b)
-    return cos_val <= 0
+def xiangliang(yanx,yany,yanz,mubiaox,mubiaoy,mubiaoz,daodan_x,daodan_y,daodan_z):
+    
+    a = np.array([yanx-mubiaox,yany-mubiaoy,yanz-mubiaoz])
+    b = np.array([daodan_x-mubiaox,daodan_y-mubiaoy,daodan_z-mubiaoz])
+    dd = np.linalg.norm(b)
+    cross_product = np.dot(a, b)
+    cross_norm = np.linalg.norm(cross_product) 
+    touying = cross_norm/dd
+    if touying <= dd+10:
+        return True
+    else:
+        return False
+
 def Kurisu_Makise(t, vx, vy, t1, t2, points):
     daodan_vx, daodan_vy, daodan_vz = sudufenpei(300, 20000, 0, 2000)
     daodan_x = 20000 - daodan_vx * t
@@ -65,17 +76,15 @@ def Kurisu_Makise(t, vx, vy, t1, t2, points):
     for sb in points:
         direction = [daodan_x - sb[0], daodan_y - sb[1], daodan_z - sb[2]]
         dist = distance(point, line_point, direction)
-        d1 = np.linalg.norm([yan_x - sb[0], yan_y - sb[1], yan_z - sb[2]])
-        d2 = np.linalg.norm([daodan_x - yan_x, daodan_y - yan_y, daodan_z - yan_z])
-        d3 = np.linalg.norm([daodan_x - sb[0], daodan_y - sb[1], daodan_z - sb[2]])
-        if dist < 10 and cos(d1, d2, d3):
+
+        if dist < 10 and xiangliang(yan_x,yan_y,yan_z,sb[0],sb[1],sb[2],daodan_x,daodan_y,daodan_z):
             return True
     return False
 
 def Mon3tr(vx, vy, t1, t2, points):
-    t = 0
+    t = t1+t2
     time_count = 0
-    while t < 69:
+    while t < t1 +t2 +20:
         t += 0.1
         if Kurisu_Makise(t, vx, vy, t1, t2, points):
             time_count += 1
@@ -89,9 +98,9 @@ def pso_optimize():
     c1 = 1.5              
     c2 = 1.5             
 
-    vx_min, vx_max = 0, 140
-    vy_min, vy_max = 0, 140
-    t1_min, t1_max = 0, 13.87
+    vx_min, vx_max = -140, 140
+    vy_min, vy_max = -140, 140
+    t1_min, t1_max = 0, 13.82
     t2_min, t2_max = 0, 11.76
 
     particles = []
