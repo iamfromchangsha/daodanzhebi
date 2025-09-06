@@ -1,6 +1,10 @@
 import numpy as np
 import random
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 def yuanzhufenge():
     center = np.array([0, 200, 0])
     r = 7
@@ -46,9 +50,6 @@ def distance(point, point_line, fangxiang):
 def cos(a, b, c):
     cos_val = (a**2 + b**2 - c**2) / (2 * a * b)
     return cos_val <= 0
-
-# =================== 适应度函数保持不变 ===================
-
 def Kurisu_Makise(t, vx, vy, t1, t2, points):
     daodan_vx, daodan_vy, daodan_vz = sudufenpei(300, 20000, 0, 2000)
     daodan_x = 20000 - daodan_vx * t
@@ -83,7 +84,7 @@ def Mon3tr(vx, vy, t1, t2, points):
 def pso_optimize():
     # 参数设置
     n_particles = 30      
-    max_iter = 100        
+    max_iter = 100  
     w = 0.7               
     c1 = 1.5              
     c2 = 1.5             
@@ -99,6 +100,7 @@ def pso_optimize():
     pbest_fitness = []    
 
     points = yuanzhufenge() 
+    history_gbest_fitness = []
 
     for _ in range(n_particles):
         while True:
@@ -125,6 +127,8 @@ def pso_optimize():
     gbest_position = pbest_positions[gbest_index]
     gbest_fitness = pbest_fitness[gbest_index]
 
+    # 记录初始值
+    history_gbest_fitness.append(gbest_fitness)
     print(f"初始全局最优适应度: {gbest_fitness:.2f}")
 
     for iter in range(max_iter):
@@ -144,7 +148,6 @@ def pso_optimize():
             vel = velocities[i]
             pos = particles[i]
             pbest = pbest_positions[i]
-
             r1, r2 = random.random(), random.random()
 
             for d in range(4):  
@@ -169,6 +172,9 @@ def pso_optimize():
                 pos[0] = 70 * np.cos(angle)
                 pos[1] = 70 * np.sin(angle)
 
+        # 每代记录一次全局最优
+        history_gbest_fitness.append(gbest_fitness)
+
         if iter % 10 == 0 or improved:
             print(f"迭代 {iter}: 全局最优适应度 = {gbest_fitness:.2f}")
 
@@ -177,8 +183,94 @@ def pso_optimize():
           f"t1={gbest_position[2]:.2f}, t2={gbest_position[3]:.2f}")
     print(f"最大遮挡时间: {gbest_fitness:.2f} 秒")
 
-    return gbest_position, gbest_fitness
+    return gbest_position, gbest_fitness, history_gbest_fitness  # 返回历史数据
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def plot_convergence(history):
+    """绘制收敛曲线"""
+    plt.figure(figsize=(10, 6))
+    plt.plot(history, 'b-o', markersize=3, label='Global Best Fitness')
+    plt.title('粒子群优化算法收敛曲线')
+    plt.xlabel('迭代')
+    plt.ylabel('最大遮蔽时间（秒）')
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+def plot_3d_trajectory(best_params, points):
+    vx, vy, t1, t2 = best_params
+    daodan_vx, daodan_vy, daodan_vz = sudufenpei(300, 20000, 0, 2000)
+    
+    # 生成时间序列
+    t_list = np.arange(0, 69, 0.5)
+    
+    missile_x, missile_y, missile_z = [], [], []
+    smoke_x, smoke_y, smoke_z = [], [], []
+    遮挡点_x, 遮挡点_y, 遮挡点_z = [], [], []
+
+    for t in t_list:
+        # 导弹位置
+        mx = 20000 - daodan_vx * t
+        my = 0
+        mz = 2000 - daodan_vz * t
+        missile_x.append(mx)
+        missile_y.append(my)
+        missile_z.append(mz)
+
+        # 烟雾弹位置
+        sx = 17800 + vx * (t1 + t2)
+        sy = vy * (t1 + t2)
+        sz = 1800 - 0.5 * 9.8 * (t2**2) - 3 * (t - t1 - t2)
+        smoke_x.append(sx)
+        smoke_y.append(sy)
+        smoke_z.append(sz)
+
+        # 判断是否遮挡
+        if Kurisu_Makise(t, vx, vy, t1, t2, points):
+            遮挡点_x.append(sx)
+            遮挡点_y.append(sy)
+            遮挡点_z.append(sz)
+
+    # 创建 3D 图
+    fig = plt.figure(figsize=(12, 9))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # 绘制导弹轨迹
+    ax.plot(missile_x, missile_y, missile_z, 'r-', label='Missile Trajectory', alpha=0.7)
+
+    # 绘制烟雾弹轨迹
+    ax.plot(smoke_x, smoke_y, smoke_z, 'b-', label='Smoke Trajectory', alpha=0.7)
+
+    # 绘制遮挡点（红色）
+    if 遮挡点_x:
+        ax.scatter(遮挡点_x, 遮挡点_y, 遮挡点_z, color='red', s=30, label='Obscuration Points', alpha=0.8)
+
+    # 绘制圆柱障碍物（只画顶部和几个侧面点，简化显示）
+    obstacle_x = [p[0] for p in points]
+    obstacle_y = [p[1] for p in points]
+    obstacle_z = [p[2] for p in points]
+    ax.scatter(obstacle_x, obstacle_y, obstacle_z, color='gray', s=10, alpha=0.5, label='Cylinder Obstacle')
+
+    # 设置标签和标题
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('3D Trajectory: Missile, Smoke, and Obscuration')
+    ax.legend()
+    ax.grid(True)
+
+    # 调整视角
+    ax.view_init(elev=20, azim=45)
+
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
-    best_params, best_fitness = pso_optimize()
+    best_params, best_fitness, history = pso_optimize()
+    
+    # 可视化
+    plot_convergence(history)
+    plot_3d_trajectory(best_params, yuanzhufenge())
