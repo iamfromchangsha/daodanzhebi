@@ -59,14 +59,13 @@ t2 = None
 
 
 
-def Kurisu_Makise(t,vx,vy,t1,t2):#适应度函数,判断是否遮挡
+def Kurisu_Makise(t,vx,vy,t1,t2,points):#适应度函数,判断是否遮挡
    # time = []
    # time.clear()
     daodan_vx,daodan_vy,daodan_vz = sudufenpei(300,20000,0,2000)
     daodan_x = 20000 - daodan_vx*t
     daodan_y = 0
     daodan_z = 2000 - daodan_vz*t
-    points = yuanzhufenge()
     k = []
     k.clear()
     yan_x = 17800+vx*(t1+t2)
@@ -94,16 +93,16 @@ def Raidian(n):
             geti.append([vx,vy,t1,t2])
     return geti
 
-def Mon3tr(vx,vy,t1,t2):#求个体的适应度
+def Mon3tr(vx,vy,t1,t2,points):#求个体的适应度
     t = 0
     time = []
     time.clear()
     while t < 69:
-        t = t + 0.01
-        buer = Kurisu_Makise(t,vx,vy,t1,t2)
+        t = t + 0.1
+        buer = Kurisu_Makise(t,vx,vy,t1,t2,points)
         if buer == True:
             time.append(t)
-    total_time = 0.01*len(time)
+    total_time = 0.1*len(time)
     return total_time
 
 def Viviana(youxiugeti):#全随机交换
@@ -541,21 +540,20 @@ def Virtuosa(youxiugeti):#特定锁死前两位交换
     return good_huan
 
 def main():
-    geti = Raidian(100)
+    points = yuanzhufenge()
+    geti = Raidian(30)
     bijiao = []
     bijiao.clear()
     print('初始个体已经生成')
     for i in geti:
-
-
-        time = Mon3tr(i[0],i[1],i[2],i[3])
+        time = Mon3tr(i[0],i[1],i[2],i[3],points)
         bijiao.append(time)
     print('初始个体的适应度函数已经计算')
     sorted_list = sorted(zip(bijiao, geti), reverse=True)
     result_list = [item for _, item in sorted_list]
     result_list = result_list[:20]
     diedaicishu = 0
-    while diedaicishu <= 100:#迭代次数
+    while diedaicishu <= 2:#迭代次数
         diedaicishu += 1
         print(f"第 {diedaicishu} 轮迭代开始")
         quansuiji = Viviana(result_list)
@@ -569,20 +567,23 @@ def main():
         youbibi = []
         youbibi.clear()
         for i in totaljiaohuan:
-            if random(0,100) < 2 and random(0,100) > 0:
+            z = random.randint(0,100)
+            if z< 2:
                 i[0] = random.uniform(0,140)
-            if random(0,100) >=2 and random(0,100) < 4:
+            if z >=2 and z < 4:
                 i[1] = random.uniform(0,140)
-            if random(0,100) >= 4 and random(0,100) < 6:
+            if z >= 4 and z < 6:
                 i[2] = random.uniform(0,140)
-            if random(0,100) >= 6 and random(0,100) < 8:
+            if z >= 6 and z < 8:
                 i[3] = random.uniform(0,140)
-            time = Mon3tr(i[0],i[1],i[2],i[3])
+            time = Mon3tr(i[0],i[1],i[2],i[3],points)
             youbibi.append(time)
         sorted_list = sorted(zip(youbibi, totaljiaohuan), reverse=True)
         result_list = [item for _, item in sorted_list]
         result_list = result_list[:20]
     print(result_list)
+    print('最好的个体是：')
+    print(Mon3tr(result_list[0][0],result_list[0][1],result_list[0][2],result_list[0][3],points))
 
 
 main()
