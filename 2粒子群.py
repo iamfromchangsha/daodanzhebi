@@ -72,14 +72,18 @@ def Kurisu_Makise(t, vx, vy, t1, t2, points):
     yan_z = 1800 - 0.5 * 9.8 * (t2**2) - 3 * (t - t1 - t2)
     point = [yan_x, yan_y, yan_z]
     line_point = [daodan_x, daodan_y, daodan_z]
+    k = []
+    k.clear()
 
     for sb in points:
         direction = [daodan_x - sb[0], daodan_y - sb[1], daodan_z - sb[2]]
         dist = distance(point, line_point, direction)
-
         if dist < 10 and xiangliang(yan_x,yan_y,yan_z,sb[0],sb[1],sb[2],daodan_x,daodan_y,daodan_z):
-            return True
-    return False
+            k.append(1)
+    if len(k) == len(points):
+        return True
+    else:
+        return False
 
 def Mon3tr(vx, vy, t1, t2, points):
     t = t1+t2
@@ -98,10 +102,10 @@ def pso_optimize():
     c1 = 1.5              
     c2 = 1.5             
 
-    vx_min, vx_max = -140, 140
-    vy_min, vy_max = -140, 140
-    t1_min, t1_max = 0, 13.82
-    t2_min, t2_max = 0, 11.76
+    vx_min, vx_max = 0, 140
+    vy_min, vy_max = 0, 140
+    t1_min, t1_max = 0.1, 13.82
+    t2_min, t2_max = 0.1, 11.76
 
     particles = []
     velocities = []
@@ -194,8 +198,8 @@ def pso_optimize():
 
     return gbest_position, gbest_fitness, history_gbest_fitness  # 返回历史数据
 
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
+
 
 def plot_convergence(history):
     """绘制收敛曲线"""
