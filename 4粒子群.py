@@ -3,7 +3,6 @@ import random
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-random.seed(42)
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 def yuanzhufenge():
@@ -93,44 +92,98 @@ def Kurisu_Makise(t, vx, vy, t1, t2, points,Viviana):
     else:
         return False
 
-def Mon3tr(vx, vy,v2x,v2y,v3x,v3y, t1, t2,t3,t4,t5,t6, points):
-    t = t1+t2
-    time = []
-    while t < t1 +t2 +20:
+def Mon3tr(vx, vy, v2x, v2y, v3x, v3y, t1, t2, t3, t4, t5, t6, points):
+    t = t1 + t2
+    time1 = 0
+    time2 = 0
+    time3 = 0
+    detection1 = []
+    detection2 = []
+    detection3 = []
+
+    # === 烟雾弹1 ===
+    while t < t1 + t2 + 20:
         t += 0.1
         Viviana = 1
-        if Kurisu_Makise(t, vx, vy, t1, t2, points,Viviana):
-            time.append(t)
+        if Kurisu_Makise(t, vx, vy, t1, t2, points, Viviana):
+            detection1.append(t)
+    time1 = len(detection1) * 0.1
+
+    # === 烟雾弹2 ===
     t = t3 + t4
-    while t < t3 + t4 +20:
+    while t < t3 + t4 + 20:
+        t += 0.1
         Viviana = 2
-        t += 0.1
-        if Kurisu_Makise(t, v2x, v2y, t3, t4, points,Viviana):
-            time.append(t)
+        if Kurisu_Makise(t, v2x, v2y, t3, t4, points, Viviana):
+            detection2.append(t)
+    time2 = len(detection2) * 0.1
+
+    # === 烟雾弹3 ===
     t = t5 + t6
-    while t < t5 + t6 +20:
-        Viviana = 3
+    while t < t5 + t6 + 20:
         t += 0.1
-        if Kurisu_Makise(t, v3x, v3y, t5, t6, points,Viviana):
-            time.append(t)
+        Viviana = 3
+        if Kurisu_Makise(t, v3x, v3y, t5, t6, points, Viviana):
+            detection3.append(t)
+    time3 = len(detection3) * 0.1
 
-    time = list(set(time))
+    total_time = time1 + time2 + time3
+    return total_time, time1, time2, time3
+def initialize_particles(n_particles, bounds):
+    particles = []
+    velocities = []
+    
+    # 解包 bounds
+    (vx_min, vx_max), (vy_min, vy_max), \
+    (v2_min, v2_max), (vy_min, vy_max), \
+    (v3_min, v3_max), (vy_min, vy_max), \
+    (t1_min, t1_max), (t2_min, t2_max), \
+    (t3_min, t3_max), (t4_min, t4_max), \
+    (t5_min, t5_max), (t6_min, t6_max) = bounds
 
-    return len(time) * 0.1 
-def lhs_sample(n, bounds):
-    """拉丁超立方抽样"""
-    sample = np.zeros((n, len(bounds)))
-    for i, (low, high) in enumerate(bounds):
-        intervals = np.linspace(low, high, n+1)
-        samples = np.random.uniform(intervals[:-1], intervals[1:])
-        np.random.shuffle(samples)
-        sample[:, i] = samples
-    return sample
+    for _ in range(n_particles):
+        while True:
+            # 随机生成速度（模长约束）
+            angle1 = random.uniform(0, 2*np.pi)
+            speed1 = random.uniform(70, 140)
+            vx = speed1 * np.cos(angle1)
+            vy = speed1 * np.sin(angle1)
+            vy = abs(vy)
+
+            angle2 = random.uniform(0, 2*np.pi)
+            speed2 = random.uniform(70, 140)
+            v2x = speed2 * np.cos(angle2)
+            v2y = speed2 * np.sin(angle2)
+            v2y = -abs(v2y)
+
+            angle3 = random.uniform(0, 2*np.pi)
+            speed3 = random.uniform(70, 140)
+            v3x = speed3 * np.cos(angle3)
+            v3y = speed3 * np.sin(angle3)
+            v3y = abs(v3y)
+
+            # 时间：确保 t1+t2 <= 13.87
+            t1 = random.uniform(t1_min, t1_max)
+            t2 = random.uniform(t2_min, min(t2_max, 13.87 - t1))
+
+            t4 = random.uniform(t4_min, t4_max)
+            t3 = random.uniform(t3_min, min(t3_max, 50.63 - t4))
+
+            t6 = random.uniform(t6_min, t6_max)
+            t5 = random.uniform(t5_min, min(t6_max, 45.81 - t6))
+
+            particle = [vx, vy, v2x, v2y, v3x, v3y, t1, t2, t3, t4, t5, t6]
+            break  # 所有约束都在生成时满足
+        
+        particles.append(particle)
+        velocities.append([random.uniform(-5, 5) for _ in range(12)])  # 初始速度小一点
+    
+    return particles, velocities
 def pso_optimize():
     # 参数设置
     n_particles = 30      
     max_iter = 100  
-    w = 0.7               
+    w = 0.9             
     c1 = 1.5              
     c2 = 1.5          
     # 在 pso_optimize() 开头添加
@@ -143,10 +196,10 @@ def pso_optimize():
     v3_min, v3_max = -140, 140
     t1_min, t1_max = 0.1, 13.82
     t2_min, t2_max = 0.1, 11.76
-    t3_min, t3_max = 0.1, 13.82
-    t4_min, t4_max = 0.1, 11.76
-    t5_min, t5_max = 0.1, 13.82
-    t6_min, t6_max = 0.1, 11.76
+    t3_min, t3_max = 8.52, 50.63
+    t4_min, t4_max = 0.1, 16.9
+    t5_min, t5_max = 22.90, 45.81
+    t6_min, t6_max = 0.1, 11.95
 
     particles = []
     velocities = []
@@ -166,39 +219,11 @@ def pso_optimize():
         (t5_min, t5_max), (t6_min, t6_max)
     ]
 
-    lhs_samples = lhs_sample(n_particles, bounds)
-
-    for i in range(n_particles):
-        while True:
-            sample = lhs_samples[i]
-            vx, vy, v2x, v2y, v3x, v3y, t1, t2, t3, t4, t5, t6 = sample
-
-            # 检查速度模长
-            if not (70 <= (vx**2+vy**2)**0.5 <= 140): continue
-            if not (70 <= (v2x**2+v2y**2)**0.5 <= 140): continue
-            if not (70 <= (v3x**2+v3y**2)**0.5 <= 140): continue
-
-            # 检查时间组合
-            if t1+t2 > 13.87 or t3+t4 > 13.87 or t5+t6 > 13.87: continue
-
-            break  # 满足所有条件
-
-        particles.append([vx, vy, v2x,v2y,v3x,v3y,t1, t2, t3, t4, t5, t6])
-        velocities.append([
-            random.uniform(-10, 10),
-            random.uniform(-10, 10),
-            random.uniform(-10, 10),
-            random.uniform(-10, 10),
-            random.uniform(-10, 10),
-            random.uniform(-10, 10),
-            random.uniform(-1, 1),
-            random.uniform(-1, 1),
-            random.uniform(-1, 1),
-            random.uniform(-1, 1),
-            random.uniform(-1, 1),
-            random.uniform(-1, 1),
-        ])
-        pbest_positions.append([vx, vy, v2x,v2y,v3x,v3y, t1, t2, t3, t4, t5, t6])
+# 删除 lhs_sample 相关代码
+    particles, velocities = initialize_particles(n_particles, bounds)
+    pbest_positions = [p.copy() for p in particles]
+    pbest_fitness = [0] * n_particles
+   
 
     for i in range(n_particles):
         fitness = Mon3tr(*particles[i], points)
@@ -210,47 +235,9 @@ def pso_optimize():
 
     # 记录初始值
     history_gbest_fitness.append(gbest_fitness)
-    if improved:
-        no_improve_count = 0
-    else:
-        no_improve_count += 1
-
-    # 如果长时间无改进，对部分粒子进行扰动
-    if no_improve_count > max_no_improve:
-        for i in range(n_particles // 5):  # 扰动 20% 粒子
-            idx = random.randint(0, n_particles - 1)
-            # 重置位置（保持约束）
-            particles[idx][0] = random.uniform(vx_min, vx_max)
-            particles[idx][1] = random.uniform(vy_min, vy_max)
-            speed = (particles[idx][0]**2 + particles[idx][1]**2)**0.5
-            if speed > 140 or speed < 70:
-                angle = random.uniform(0, 2*np.pi)
-                particles[idx][0] = random.choice([70, 140]) * np.cos(angle)
-                particles[idx][1] = random.choice([70, 140]) * np.sin(angle)
-
-            # 时间部分随机但满足组合约束
-            t1 = random.uniform(t1_min, t1_max)
-            t2 = random.uniform(t2_min, min(t2_max, 13.87 - t1))
-            particles[idx][6] = t1
-            particles[idx][7] = t2
-
-            # 其他时间也类似处理...
-            t3 = random.uniform(t3_min, t3_max)
-            t4 = random.uniform(t4_min, min(t4_max, 13.87 - t3))
-            particles[idx][8] = t3
-            particles[idx][9] = t4
-
-            t5 = random.uniform(t5_min, t5_max)
-            t6 = random.uniform(t6_min, min(t6_max, 13.87 - t5))
-            particles[idx][10] = t5
-            particles[idx][11] = t6
-
-            # 速度也重置
-            velocities[idx] = [random.uniform(-10,10) for _ in range(12)]
-        print(f">>> 第 {iter} 代：无改进 {no_improve_count} 代，执行粒子扰动！")
-        no_improve_count = 0  # 重置计数
     print(f"初始全局最优适应度: {gbest_fitness:.2f}")
-
+    
+    # === 主循环开始 ===
     for iter in range(max_iter):
         improved = False
         for i in range(n_particles):
@@ -265,6 +252,7 @@ def pso_optimize():
                     improved = True
 
         # === 更新所有粒子 ===
+        improved = False
         for i in range(n_particles):
             vel = velocities[i]
             pos = particles[i]
@@ -293,6 +281,8 @@ def pso_optimize():
 
             # === 组合约束：t1+t2 <= 13.87, t3+t4 <= 13.87, t5+t6 <= 13.87 ===
             max_sum = 13.87
+            maxsuma = 50.63 
+            maxsumb = 45.81
 
             # 修复 t1 + t2
             if pos[6] + pos[7] > max_sum:
@@ -306,13 +296,13 @@ def pso_optimize():
                 # pos[7] -= excess * 0.4
 
             # 修复 t3 + t4
-            if pos[8] + pos[9] > max_sum:
+            if pos[8] + pos[9] > maxsuma:
                 scale = max_sum / (pos[8] + pos[9])
                 pos[8] *= scale
                 pos[9] *= scale
 
             # 修复 t5 + t6
-            if pos[10] + pos[11] > max_sum:
+            if pos[10] + pos[11] > maxsumb:
                 scale = max_sum / (pos[10] + pos[11])
                 pos[10] *= scale
                 pos[11] *= scale
@@ -334,6 +324,47 @@ def pso_optimize():
 
         # 记录当前最优
         history_gbest_fitness.append(gbest_fitness)
+        
+        # 更新无改进计数器
+        if improved:
+            no_improve_count = 0
+        else:
+            no_improve_count += 1
+            
+        # 如果长时间无改进，对部分粒子进行扰动
+        if no_improve_count > max_no_improve:
+            for i in range(n_particles // 5):  # 扰动 20% 粒子
+                idx = random.randint(0, n_particles - 1)
+                # 重置位置（保持约束）
+                particles[idx][0] = random.uniform(vx_min, vx_max)
+                particles[idx][1] = random.uniform(vy_min, vy_max)
+                speed = (particles[idx][0]**2 + particles[idx][1]**2)**0.5
+                if speed > 140 or speed < 70:
+                    angle = random.uniform(0, 2*np.pi)
+                    particles[idx][0] = random.choice([70, 140]) * np.cos(angle)
+                    particles[idx][1] = random.choice([70, 140]) * np.sin(angle)
+
+                # 时间部分随机但满足组合约束
+                t1 = random.uniform(t1_min, t1_max)
+                t2 = random.uniform(t2_min, min(t2_max, 13.87 - t1))
+                particles[idx][6] = t1
+                particles[idx][7] = t2
+
+                # 其他时间也类似处理...
+                t3 = random.uniform(t3_min, t3_max)
+                t4 = random.uniform(t4_min, min(t4_max, 13.87 - t3))
+                particles[idx][8] = t3
+                particles[idx][9] = t4
+
+                t5 = random.uniform(t5_min, t5_max)
+                t6 = random.uniform(t6_min, min(t6_max, 13.87 - t5))
+                particles[idx][10] = t5
+                particles[idx][11] = t6
+
+                # 速度也重置
+                velocities[idx] = [random.uniform(-10,10) for _ in range(12)]
+            print(f">>> 第 {iter} 代：无改进 {no_improve_count} 代，执行粒子扰动！")
+            no_improve_count = 0  # 重置计数
 
         if iter % 10 == 0 or improved:
             vx, vy, v2x, v2y, v3x, v3y, t1, t2, t3, t4, t5, t6 = gbest_position
@@ -341,7 +372,8 @@ def pso_optimize():
                 f"适应度={gbest_fitness:5.2f}s | "
                 f"t1+t2={t1+t2:5.2f}, t3+t4={t3+t4:5.2f}, t5+t6={t5+t6:5.2f} | "
                 f"v1=({vx:5.1f},{vy:5.1f}), v2=({v2x:5.1f},{v2y:5.1f}), v3=({v3x:5.1f},{v3y:5.1f})")
-            print("\n=== 优化完成 ===")
+                
+    print("\n=== 优化完成 ===")
     vx, vy, v2x, v2y, v3x, v3y, t1, t2, t3, t4, t5, t6 = gbest_position
 
     print("\n=== 最优参数 ===")
@@ -351,7 +383,16 @@ def pso_optimize():
     print(f"烟雾弹 2 发射时间: t3  = {t3:8.2f}, t4  = {t4:8.2f}  → 总延迟 = {t3+t4:.2f}s")
     print(f"烟雾弹 3 发射速度: vx3 = {v3x:8.2f}, vy3 = {v3y:8.2f}  → 速度模长 = {np.hypot(v3x, v3y):.2f}")
     print(f"烟雾弹 3 发射时间: t5  = {t5:8.2f}, t6  = {t6:8.2f}  → 总延迟 = {t5+t6:.2f}s")
-    print(f"\n最大遮挡时间: {gbest_fitness:.2f} 秒")
+
+    # === 计算每颗烟的遮蔽时间 ===
+    points = yuanzhufenge()
+    total_time, time1, time2, time3 = Mon3tr(vx, vy, v2x, v2y, v3x, v3y, t1, t2, t3, t4, t5, t6, points)
+
+    print(f"\n=== 每颗烟雾弹的遮蔽时间 ===")
+    print(f"烟雾弹 1 遮蔽时间: {time1:.2f} 秒")
+    print(f"烟雾弹 2 遮蔽时间: {time2:.2f} 秒")
+    print(f"烟雾弹 3 遮蔽时间: {time3:.2f} 秒")
+    print(f"\n总遮蔽时间: {total_time:.2f} 秒 (应与上方一致)")
     return gbest_position, gbest_fitness, history_gbest_fitness  # 返回历史数据
 
 
@@ -369,78 +410,10 @@ def plot_convergence(history):
     plt.tight_layout()
     plt.show()
 
-def plot_3d_trajectory(best_params, points):
-    vx, vy, v2x, v2y, v3x, v3y, t1, t2, t3, t4, t5, t6 = best_params
-    daodan_vx, daodan_vy, daodan_vz = sudufenpei(300, 20000, 0, 2000)
-    
-    t_list = np.arange(0, 69, 0.5)
-    
-    missile_x, missile_y, missile_z = [], [], []
-    smoke_x, smoke_y, smoke_z = [], [], []
-    obs_x, obs_y, obs_z = [], [], []
 
-    for t in t_list:
-        # 导弹轨迹
-        mx = 20000 - daodan_vx * t
-        my = 0
-        mz = 2000 - daodan_vz * t
-        missile_x.append(mx)
-        missile_y.append(my)
-        missile_z.append(mz)
-
-        # 判断属于哪一段烟雾弹
-        if t >= t1 + t2 and t < t1 + t2 + 20:
-            # 第一段
-            sx = 17800 + vx * (t1 + t2)
-            sy = vy * (t1 + t2)
-            sz = 1800 - 0.5 * 9.8 * (t2**2) - 3 * (t - t1 - t2)
-            if Kurisu_Makise(t, vx, vy, t1, t2, points, 1):
-                obs_x.append(sx); obs_y.append(sy); obs_z.append(sz)
-        elif t >= t3 + t4 and t < t3 + t4 + 20:
-            # 第二段
-            sx = 12000 + v2x * (t3 + t4)
-            sy = 1400 + v2y * (t3 + t4)
-            sz = 1400 - 0.5 * 9.8 * (t4**2) - 3 * (t - t3 - t4)
-            if Kurisu_Makise(t, v2x, v2y, t3, t4, points, 2):
-                obs_x.append(sx); obs_y.append(sy); obs_z.append(sz)
-        elif t >= t5 + t6 and t < t5 + t6 + 20:
-            # 第三段
-            sx = 6000 + v3x * (t5 + t6)
-            sy = -3000 + v3y * (t5 + t6)
-            sz = 700 - 0.5 * 9.8 * (t6**2) - 3 * (t - t5 - t6)
-            if Kurisu_Makise(t, v3x, v3y, t5, t6, points, 3):
-                obs_x.append(sx); obs_y.append(sy); obs_z.append(sz)
-        else:
-            sx = sy = sz = np.nan  # 不发射
-
-        smoke_x.append(sx)
-        smoke_y.append(sy)
-        smoke_z.append(sz)
-
-    fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(111, projection='3d')
-
-    ax.plot(missile_x, missile_y, missile_z, 'r-', label='Missile', alpha=0.8)
-    ax.plot(smoke_x, smoke_y, smoke_z, 'b--', label='Smoke Clouds', alpha=0.6)
-
-    if obs_x:
-        ax.scatter(obs_x, obs_y, obs_z, color='purple', s=40, label='Obscuration Points', alpha=0.9)
-
-    # 障碍物
-    obstacle_pts = np.array(points)
-    ax.scatter(obstacle_pts[:,0], obstacle_pts[:,1], obstacle_pts[:,2], 
-               color='gray', s=10, alpha=0.4, label='Cylinder')
-
-    ax.set_xlabel('X'); ax.set_ylabel('Y'); ax.set_zlabel('Z')
-    ax.set_title('3D Trajectory: Missile, Multi-Smoke & Obscuration')
-    ax.legend()
-    ax.view_init(elev=20, azim=45)
-    plt.tight_layout()
-    plt.show()
 
 if __name__ == "__main__":
     best_params, best_fitness, history = pso_optimize()
     
     # 可视化
     plot_convergence(history)
-    plot_3d_trajectory(best_params, yuanzhufenge())
